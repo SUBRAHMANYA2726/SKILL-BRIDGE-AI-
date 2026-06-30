@@ -18,6 +18,9 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/opportunities', require('./routes/opportunities'));
+app.use('/api/resources', require('./routes/resources'));
+app.use('/api/users', require('./routes/users'));
 
 // Firebase Admin Seeder
 const seedAdmin = async () => {

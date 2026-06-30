@@ -4,76 +4,14 @@ import { Search, MapPin, DollarSign, Clock, ExternalLink, Filter, Briefcase, Cod
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
-const MOCK_OPPORTUNITIES = [
-  {
-    id: '1',
-    company: 'Google',
-    title: 'Software Engineering Intern',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
-    type: 'Paid',
-    stipend: '$8,000/month',
-    location: 'Mountain View, CA (Remote)',
-    duration: '12 Weeks',
-    skills: ['React', 'Node.js', 'Data Structures'],
-    deadline: 'Oct 30, 2026',
-    posted: '2 days ago',
-    url: 'https://careers.google.com/students/',
-    category: 'Internships'
-  },
-  {
-    id: '2',
-    company: 'Microsoft',
-    title: 'AI Research Hackathon',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
-    type: 'Free',
-    stipend: 'Prize Pool $50k',
-    location: 'Virtual',
-    duration: '48 Hours',
-    skills: ['Python', 'PyTorch', 'Machine Learning'],
-    deadline: 'Nov 15, 2026',
-    posted: '5 days ago',
-    url: 'https://careers.microsoft.com/students',
-    category: 'Hackathons'
-  },
-  {
-    id: '3',
-    company: 'Amazon',
-    title: 'Frontend Developer (Full-time)',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg',
-    type: 'Paid',
-    stipend: '$120,000/year',
-    location: 'Seattle, WA',
-    duration: 'Full-time',
-    skills: ['JavaScript', 'React', 'CSS'],
-    deadline: 'Rolling',
-    posted: '1 week ago',
-    url: 'https://amazon.jobs/',
-    category: 'Full-time Jobs'
-  },
-  {
-    id: '4',
-    company: 'Internshala',
-    title: 'Web Dev Winter Training',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/8/8b/Internshala_logo.png',
-    type: 'Free',
-    stipend: 'Unpaid',
-    location: 'Remote',
-    duration: '4 Weeks',
-    skills: ['HTML', 'CSS', 'JavaScript'],
-    deadline: 'Dec 1, 2026',
-    posted: '1 day ago',
-    url: 'https://internshala.com/',
-    category: 'Virtual Internships'
-  }
-];
-
-const CATEGORIES = ['All', 'Internships', 'Hackathons', 'Full-time Jobs', 'Virtual Internships', 'Scholarships'];
+const CATEGORIES = ['All', 'Recommended', 'Internships', 'Hackathons', 'Full-time Jobs', 'Virtual Internships', 'Scholarships'];
 
 export default function OpportunityHub() {
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [opportunities, setOpportunities] = useState(MOCK_OPPORTUNITIES);
+  const [opportunities, setOpportunities] = useState([]);
   const [savedJobs, setSavedJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,17 +19,89 @@ export default function OpportunityHub() {
     if (!token) {
       toast.error('Please login to view opportunities');
       navigate('/login');
+      return;
     }
-    // TODO: In Phase 2, fetch real live data from backend JSearch/Firestore API here
-  }, [navigate]);
+    
+    // Fetch user profile to get saved jobs
+    fetch('http://localhost:5000/api/users/profile', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.savedOpportunities) {
+        setSavedJobs(data.savedOpportunities);
+      }
+    })
+    .catch(err => console.error(err));
 
-  const toggleSave = (id) => {
+    if (activeTab === 'Recommended') {
+      fetchRecommendations(token);
+    } else {
+      fetchOpportunities(token);
+    }
+  }, [activeTab, navigate]);
+
+  const fetchOpportunities = async (token) => {
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/opportunities', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOpportunities(data);
+      } else {
+        toast.error('Failed to fetch live opportunities');
+      }
+    } catch (err) {
+      toast.error('Network error fetching opportunities');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRecommendations = async (token) => {
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/users/recommendations', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOpportunities(data);
+      } else {
+        toast.error('Failed to fetch recommendations');
+      }
+    } catch (err) {
+      toast.error('Network error fetching recommendations');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSave = async (id) => {
+    const token = localStorage.getItem('token');
+    
+    // Optimistic UI update
     if (savedJobs.includes(id)) {
       setSavedJobs(savedJobs.filter(jobId => jobId !== id));
       toast.success('Removed from saved');
     } else {
       setSavedJobs([...savedJobs, id]);
       toast.success('Opportunity saved!');
+    }
+
+    try {
+      await fetch('http://localhost:5000/api/users/bookmarks', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ itemId: id, type: 'opportunity' })
+      });
+    } catch (err) {
+      console.error('Failed to sync bookmark to server');
     }
   };
 
@@ -150,10 +160,17 @@ export default function OpportunityHub() {
 
         {/* Results Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredOps.map((op, idx) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+          {loading ? (
+            <div className="col-span-1 lg:col-span-2 text-center py-20">
+              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-400">Loading live opportunities...</p>
+            </div>
+          ) : (
+            <>
+              {filteredOps.map((op, idx) => (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
               key={op.id}
               className="glass-dark border border-white/10 rounded-2xl p-6 hover:border-blue-500/30 transition-all group"
@@ -222,12 +239,14 @@ export default function OpportunityHub() {
             </motion.div>
           ))}
           
-          {filteredOps.length === 0 && (
+          {filteredOps.length === 0 && !loading && (
             <div className="col-span-1 lg:col-span-2 text-center py-20">
               <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">No opportunities found</h3>
               <p className="text-gray-400">Try adjusting your search filters or keywords.</p>
             </div>
+          )}
+            </>
           )}
         </div>
       </div>

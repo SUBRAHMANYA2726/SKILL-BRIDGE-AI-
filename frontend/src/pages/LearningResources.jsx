@@ -9,56 +9,41 @@ const DOMAINS = [
   'UI/UX', 'Blockchain', 'Game Development', 'IoT', 'AR/VR'
 ];
 
-const MOCK_RESOURCES = {
-  'Web Development': [
-    {
-      id: 'r1',
-      title: 'freeCodeCamp Full Stack Curriculum',
-      description: 'Comprehensive curriculum covering HTML, CSS, React, Node, and more.',
-      category: 'Useful Platforms',
-      link: 'https://www.freecodecamp.org/',
-      icon: <MonitorPlay className="w-5 h-5 text-blue-400" />
-    },
-    {
-      id: 'r2',
-      title: 'MDN Web Docs',
-      description: 'The official documentation for Web technologies by Mozilla.',
-      category: 'Official Documentation',
-      link: 'https://developer.mozilla.org/',
-      icon: <FileText className="w-5 h-5 text-green-400" />
-    },
-    {
-      id: 'r3',
-      title: 'Frontend Developer Roadmap',
-      description: 'Step by step guide to becoming a modern frontend developer.',
-      category: 'Learning Roadmaps',
-      link: 'https://roadmap.sh/frontend',
-      icon: <Navigation className="w-5 h-5 text-purple-400" />
-    }
-  ],
-  'Artificial Intelligence': [
-    {
-      id: 'r4',
-      title: 'Hugging Face Courses',
-      description: 'Learn Natural Language Processing and transformers.',
-      category: 'Useful Platforms',
-      link: 'https://huggingface.co/course',
-      icon: <MonitorPlay className="w-5 h-5 text-blue-400" />
-    },
-    {
-      id: 'r5',
-      title: 'OpenAI API Documentation',
-      description: 'Official docs for integrating GPT models.',
-      category: 'Official Documentation',
-      link: 'https://platform.openai.com/docs/',
-      icon: <FileText className="w-5 h-5 text-green-400" />
-    }
-  ]
-};
-
 export default function LearningResources() {
   const [activeDomain, setActiveDomain] = useState('Web Development');
-  const resources = MOCK_RESOURCES[activeDomain] || [];
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Please login to view resources');
+      navigate('/login');
+      return;
+    }
+    
+    fetchResources(token, activeDomain);
+  }, [activeDomain, navigate]);
+
+  const fetchResources = async (token, domain) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/resources?domain=${encodeURIComponent(domain)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setResources(data);
+      } else {
+        toast.error('Failed to fetch resources');
+      }
+    } catch (err) {
+      toast.error('Network error fetching resources');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 pt-20 pb-12">
@@ -102,7 +87,12 @@ export default function LearningResources() {
               {activeDomain} Resources
             </h2>
 
-            {resources.length > 0 ? (
+            {loading ? (
+              <div className="text-center py-20">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-400">Loading resources...</p>
+              </div>
+            ) : resources.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {resources.map((resource, idx) => (
                   <motion.div 
@@ -115,7 +105,11 @@ export default function LearningResources() {
                     <div>
                       <div className="flex justify-between items-start mb-3">
                         <span className="px-3 py-1 bg-slate-800 rounded-full text-xs font-medium text-gray-300 flex items-center gap-1 border border-white/5">
-                          {resource.icon} {resource.category}
+                          {resource.category === 'Useful Platforms' && <MonitorPlay className="w-4 h-4 text-blue-400" />}
+                          {resource.category === 'Official Documentation' && <FileText className="w-4 h-4 text-green-400" />}
+                          {resource.category === 'Learning Roadmaps' && <Navigation className="w-4 h-4 text-purple-400" />}
+                          {(!['Useful Platforms', 'Official Documentation', 'Learning Roadmaps'].includes(resource.category)) && <BookOpen className="w-4 h-4 text-gray-400" />}
+                          {resource.category}
                         </span>
                         <button className="text-gray-500 hover:text-blue-400 transition-colors">
                           <Bookmark className="w-5 h-5" />
