@@ -29,7 +29,7 @@ export default function LearningResources() {
   const fetchResources = async (token, domain) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/resources?domain=${encodeURIComponent(domain)}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/resources?domain=${encodeURIComponent(domain)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {

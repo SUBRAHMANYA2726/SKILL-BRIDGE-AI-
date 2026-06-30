@@ -15,7 +15,7 @@ const Navbar = () => {
     if (isLoggedIn) {
       const fetchNotifications = async () => {
         try {
-          const res = await fetch('http://localhost:5000/api/users/notifications', {
+          const res = await fetch('${import.meta.env.VITE_API_URL || ''}/api/users/notifications', {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           });
           if (res.ok) {

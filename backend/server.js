@@ -66,19 +66,24 @@ const seedAdmin = async () => {
   }
 };
 
-// Automated Daily Jobs Sync & Cleanup (Runs every 6 hours)
-setInterval(async () => {
-  console.log('Running scheduled 6-hour job aggregation and cleanup...');
-  await cleanupExpiredJobs();
-  await syncLiveJobs();
-}, 6 * 60 * 60 * 1000);
+// Only run cron and listen if NOT in Vercel serverless environment
+if (!process.env.VERCEL) {
+  // Automated Daily Jobs Sync & Cleanup (Runs every 6 hours)
+  setInterval(async () => {
+    console.log('Running scheduled 6-hour job aggregation and cleanup...');
+    await cleanupExpiredJobs();
+    await syncLiveJobs();
+  }, 6 * 60 * 60 * 1000);
 
-// Run a cleanup on boot
-cleanupExpiredJobs();
-// We won't run syncLiveJobs() immediately on boot to avoid spamming the public API on every reload during dev.
+  // Run a cleanup on boot
+  cleanupExpiredJobs();
 
-// Start Server & Seed
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  seedAdmin();
-});
+  // Start Server & Seed
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    seedAdmin();
+  });
+}
+
+// Export the Express API for Vercel Serverless integration
+module.exports = app;

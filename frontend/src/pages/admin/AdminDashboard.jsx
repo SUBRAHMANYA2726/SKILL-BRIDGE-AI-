@@ -26,10 +26,10 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       const [usersRes, statsRes] = await Promise.all([
-        fetch(`http://localhost:5000/api/admin/users?keyword=${search}`, {
+        fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/users?keyword=${search}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('http://localhost:5000/api/admin/stats', {
+        fetch('${import.meta.env.VITE_API_URL || ''}/api/admin/stats', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -56,7 +56,7 @@ export default function AdminDashboard() {
   const toggleBlockUser = async (id) => {
     if (!window.confirm('Are you sure you want to change this user status?')) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${id}/block`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/users/${id}/block`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
   const deleteUser = async (id) => {
     if (!window.confirm('Are you sure you want to completely delete this user? This cannot be undone.')) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
               <button 
                 onClick={async () => {
                   try {
-                    const res = await fetch('http://localhost:5000/api/admin/sync-jobs', {
+                    const res = await fetch('${import.meta.env.VITE_API_URL || ''}/api/admin/sync-jobs', {
                       method: 'POST',
                       headers: { Authorization: `Bearer ${token}` }
                     });
