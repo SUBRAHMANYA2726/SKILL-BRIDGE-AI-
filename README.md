@@ -1,4 +1,4 @@
-# SkillBridge AI
+# SkillBridge AI(VITE)
 
 SkillBridge AI is a next-generation platform connecting students with internships, jobs, hackathons, and certifications, powered by personalized AI career guidance.
 
