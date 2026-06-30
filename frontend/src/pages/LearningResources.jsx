@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, MonitorPlay, FileText, Github, Navigation, ExternalLink, Bookmark } from 'lucide-react';
+import { BookOpen, MonitorPlay, FileText, Navigation, ExternalLink, Bookmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const DOMAINS = [
