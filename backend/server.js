@@ -66,12 +66,12 @@ const seedAdmin = async () => {
   }
 };
 
-// Automated Daily Jobs Sync & Cleanup (Runs every 24 hours)
+// Automated Daily Jobs Sync & Cleanup (Runs every 6 hours)
 setInterval(async () => {
-  console.log('Running scheduled daily job aggregation and cleanup...');
+  console.log('Running scheduled 6-hour job aggregation and cleanup...');
   await cleanupExpiredJobs();
   await syncLiveJobs();
-}, 24 * 60 * 60 * 1000);
+}, 6 * 60 * 60 * 1000);
 
 // Run a cleanup on boot
 cleanupExpiredJobs();

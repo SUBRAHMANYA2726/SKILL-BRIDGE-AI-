@@ -182,7 +182,12 @@ export default function OpportunityHub() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">{op.title}</h3>
-                    <p className="text-gray-400 font-medium">{op.company} <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded ml-2">Verified</span></p>
+                    <p className="text-gray-400 font-medium">
+                      {op.company} 
+                      {op.verified && (
+                        <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded ml-2 border border-blue-500/20">Official Portal</span>
+                      )}
+                    </p>
                   </div>
                 </div>
                 <button 
@@ -236,7 +241,7 @@ export default function OpportunityHub() {
           {filteredOps.length === 0 && !loading && (
             <div className="col-span-1 lg:col-span-2 text-center py-20">
               <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No opportunities found</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">No current opportunities found. Please check again later.</h3>
               <p className="text-gray-400">Try adjusting your search filters or keywords.</p>
             </div>
           )}

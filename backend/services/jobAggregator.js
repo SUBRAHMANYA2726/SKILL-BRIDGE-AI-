@@ -3,78 +3,109 @@ const admin = require('../config/firebase');
 const syncLiveJobs = async () => {
   try {
     const db = admin.firestore();
-    console.log('Fetching live jobs from public APIs...');
+    console.log('Fetching live jobs strictly from official APIs and verified boards...');
 
     const newJobs = [];
 
-    // 1. Fetch from Arbeitnow (Free API, Real Companies)
-    try {
-      const arbeitnowRes = await fetch('https://www.arbeitnow.com/api/job-board-api');
-      if (arbeitnowRes.ok) {
-        const data = await arbeitnowRes.json();
-        const jobs = data.data.slice(0, 15); // limit to 15 to avoid spam
-        jobs.forEach(job => {
-          newJobs.push({
-            title: job.title,
-            company: job.company_name,
-            location: job.location,
-            stipend: job.salary || 'Not disclosed',
-            category: 'Full-time Jobs', // default assumption from this board
-            skills: job.tags || ['Tech'],
-            description: 'Apply via official portal. ' + (job.description ? job.description.substring(0, 150) + '...' : ''),
-            link: job.url,
-            applyLink: job.url,
-            expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-            source: 'Arbeitnow',
-            createdAt: new Date().toISOString()
+    // 1. Fetch from Greenhouse API (Example: Stripe, Figma)
+    const greenhouseBoards = ['stripe', 'figma'];
+    for (const board of greenhouseBoards) {
+      try {
+        const ghRes = await fetch(`https://boards-api.greenhouse.io/v1/boards/${board}/jobs`);
+        if (ghRes.ok) {
+          const data = await ghRes.json();
+          const jobs = data.jobs.slice(0, 5); // Take 5 recent
+          jobs.forEach(job => {
+            newJobs.push({
+              title: job.title,
+              company: board.charAt(0).toUpperCase() + board.slice(1),
+              location: job.location.name || 'Remote',
+              stipend: 'Not disclosed (Official ATS)',
+              category: job.title.toLowerCase().includes('intern') ? 'Internships' : 'Full-time Jobs',
+              skills: ['Tech'],
+              description: 'Official Greenhouse ATS Listing. Apply directly on the company portal.',
+              link: job.absolute_url,
+              applyLink: job.absolute_url,
+              expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              source: 'Greenhouse API',
+              verified: true, // Official Company Portal
+              createdAt: job.updated_at || new Date().toISOString()
+            });
           });
-        });
+        }
+      } catch (err) {
+        console.error(`Greenhouse API error for ${board}:`, err.message);
       }
-    } catch (err) {
-      console.error('Arbeitnow API error:', err.message);
     }
 
-    // 2. Fetch from Remotive (Free Remote Tech Jobs API)
+    // 2. Fetch from Lever API (Example: Netflix, Coursera)
+    const leverBoards = ['netflix', 'coursera'];
+    for (const board of leverBoards) {
+      try {
+        const lvRes = await fetch(`https://api.lever.co/v0/postings/${board}?mode=json`);
+        if (lvRes.ok) {
+          const data = await lvRes.json();
+          const jobs = data.slice(0, 5); // Take 5 recent
+          jobs.forEach(job => {
+            newJobs.push({
+              title: job.text,
+              company: board.charAt(0).toUpperCase() + board.slice(1),
+              location: job.categories.location || 'Remote',
+              stipend: 'Not disclosed (Official ATS)',
+              category: job.text.toLowerCase().includes('intern') ? 'Internships' : 'Full-time Jobs',
+              skills: job.categories.team ? [job.categories.team] : ['Tech'],
+              description: job.descriptionPlain ? job.descriptionPlain.substring(0, 150) + '...' : 'Official Lever ATS Listing.',
+              link: job.hostedUrl,
+              applyLink: job.applyUrl || job.hostedUrl,
+              expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              source: 'Lever API',
+              verified: true, // Official Company Portal
+              createdAt: new Date(job.createdAt).toISOString()
+            });
+          });
+        }
+      } catch (err) {
+        console.error(`Lever API error for ${board}:`, err.message);
+      }
+    }
+
+    // 3. Fetch from RemoteOK API (Public Tech Job Board)
     try {
-      const remotiveRes = await fetch('https://remotive.com/api/remote-jobs?category=software-dev&limit=15');
-      if (remotiveRes.ok) {
-        const data = await remotiveRes.json();
-        const jobs = data.jobs.slice(0, 15);
+      const roRes = await fetch('https://remoteok.com/api');
+      if (roRes.ok) {
+        const data = await roRes.json();
+        const jobs = data.slice(1, 10); // Skip first element (it's API info)
         jobs.forEach(job => {
           newJobs.push({
-            title: job.title,
-            company: job.company_name,
-            location: 'Remote',
-            stipend: job.salary || 'Competitive',
-            category: job.job_type.includes('contract') ? 'Internships' : 'Full-time Jobs',
-            skills: job.tags || ['Software Development'],
-            description: 'Apply via official portal.',
+            title: job.position,
+            company: job.company,
+            location: 'Remote Worldwide',
+            stipend: job.salary_min && job.salary_max ? `$${job.salary_min} - $${job.salary_max}/yr` : 'Not disclosed',
+            category: 'Full-time Jobs',
+            skills: job.tags || ['Software'],
+            description: 'Apply via official RemoteOK listing.',
             link: job.url,
             applyLink: job.url,
             expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            source: 'Remotive',
-            createdAt: new Date().toISOString()
+            source: 'RemoteOK',
+            verified: false, // External aggregator
+            createdAt: new Date(job.date).toISOString()
           });
         });
       }
     } catch (err) {
-      console.error('Remotive API error:', err.message);
+      console.error('RemoteOK API error:', err.message);
     }
 
-    // 3. Clear existing old jobs (optional: right now we'll just wipe old aggregated jobs to prevent duplicates)
-    const existingAggregated = await db.collection('opportunities')
-      .where('source', 'in', ['Arbeitnow', 'Remotive'])
-      .get();
-      
-    const batch = db.batch();
-    existingAggregated.forEach(doc => {
-      batch.delete(doc.ref);
+    // Completely clear all old jobs to ensure NO mock data remains
+    const allExisting = await db.collection('opportunities').get();
+    const deleteBatch = db.batch();
+    allExisting.forEach(doc => {
+      deleteBatch.delete(doc.ref);
     });
-    
-    // Commit deletes
-    await batch.commit();
+    await deleteBatch.commit();
 
-    // 4. Add new live jobs
+    // Add new live jobs
     const addBatch = db.batch();
     newJobs.forEach(job => {
       const newRef = db.collection('opportunities').doc();
@@ -82,7 +113,7 @@ const syncLiveJobs = async () => {
     });
 
     await addBatch.commit();
-    console.log(`Successfully synced ${newJobs.length} live jobs to Firestore!`);
+    console.log(`Successfully synced ${newJobs.length} real live jobs to Firestore! Mock data wiped.`);
     
     return { success: true, count: newJobs.length };
   } catch (error) {
