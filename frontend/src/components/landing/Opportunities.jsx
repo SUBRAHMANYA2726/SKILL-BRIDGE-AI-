@@ -9,7 +9,7 @@ const Opportunities = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('${import.meta.env.VITE_API_URL || ''}/api/opportunities/public')
+    fetch(`${import.meta.env.VITE_API_URL || ""}/api/opportunities/public`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setOpportunities(data);

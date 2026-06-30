@@ -23,7 +23,7 @@ export default function OpportunityHub() {
     }
     
     // Fetch user profile to get saved jobs
-    fetch('${import.meta.env.VITE_API_URL || ''}/api/users/profile', {
+    fetch(`${import.meta.env.VITE_API_URL || ""}/api/users/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => res.json())
@@ -44,7 +44,7 @@ export default function OpportunityHub() {
   const fetchOpportunities = async (token) => {
     setLoading(true);
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL || ''}/api/opportunities', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/opportunities`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -63,7 +63,7 @@ export default function OpportunityHub() {
   const fetchRecommendations = async (token) => {
     setLoading(true);
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL || ''}/api/users/recommendations', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/users/recommendations`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -92,7 +92,7 @@ export default function OpportunityHub() {
     }
 
     try {
-      await fetch('${import.meta.env.VITE_API_URL || ''}/api/users/bookmarks', {
+      await fetch(`${import.meta.env.VITE_API_URL || ""}/api/users/bookmarks`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

@@ -25,7 +25,7 @@ export default function Login() {
       const token = await userCredential.user.getIdToken();
 
       // 2. Sync with Backend to check Firestore profile and update Last Login
-      const res = await fetch('${import.meta.env.VITE_API_URL || ''}/api/auth/login', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

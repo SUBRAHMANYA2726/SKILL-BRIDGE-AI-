@@ -29,7 +29,7 @@ export default function AdminDashboard() {
         fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/users?keyword=${search}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('${import.meta.env.VITE_API_URL || ''}/api/admin/stats', {
+        fetch(`${import.meta.env.VITE_API_URL || ""}/api/admin/stats`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -179,7 +179,7 @@ export default function AdminDashboard() {
               <button 
                 onClick={async () => {
                   try {
-                    const res = await fetch('${import.meta.env.VITE_API_URL || ''}/api/admin/sync-jobs', {
+                    const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/admin/sync-jobs`, {
                       method: 'POST',
                       headers: { Authorization: `Bearer ${token}` }
                     });
