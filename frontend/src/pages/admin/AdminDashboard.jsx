@@ -175,7 +175,25 @@ export default function AdminDashboard() {
               <Users className="w-5 h-5 text-blue-400" /> User Management
             </h2>
             
-            <div className="flex gap-4 w-full sm:w-auto">
+            <div className="flex gap-4 w-full sm:w-auto flex-wrap">
+              <button 
+                onClick={async () => {
+                  try {
+                    const res = await fetch('http://localhost:5000/api/admin/sync-jobs', {
+                      method: 'POST',
+                      headers: { Authorization: `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+                    if (res.ok) toast.success(data.message);
+                    else toast.error(data.message || 'Failed to sync jobs');
+                  } catch (err) {
+                    toast.error('Network error triggering sync');
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+              >
+                <Search className="w-4 h-4" /> Force Sync Jobs
+              </button>
               <div className="relative flex-1 sm:w-64">
                 <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input 
