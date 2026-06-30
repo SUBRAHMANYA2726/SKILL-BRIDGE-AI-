@@ -63,8 +63,29 @@ const deleteOpportunity = async (req, res) => {
   }
 };
 
+// @desc    Get public opportunities (for landing page)
+// @route   GET /api/opportunities/public
+// @access  Public
+const getPublicOpportunities = async (req, res) => {
+  try {
+    const db = admin.firestore();
+    const opsSnapshot = await db.collection('opportunities').orderBy('createdAt', 'desc').limit(4).get();
+    
+    let ops = [];
+    opsSnapshot.forEach(doc => {
+      ops.push({ _id: doc.id, ...doc.data() });
+    });
+
+    res.json(ops);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error fetching public opportunities' });
+  }
+};
+
 module.exports = {
   getOpportunities,
+  getPublicOpportunities,
   createOpportunity,
   deleteOpportunity
 };
