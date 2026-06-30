@@ -177,40 +177,37 @@ export default function OpportunityHub() {
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex gap-4 items-center">
-                  <div className="w-14 h-14 bg-white rounded-xl p-2 flex items-center justify-center shadow-lg">
-                    <img src={op.logo} alt={op.company} className="max-w-full max-h-full object-contain" />
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl p-2 flex items-center justify-center border border-white/10">
+                    <span className="text-xl font-bold text-blue-400">{op.company ? op.company.charAt(0) : 'C'}</span>
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">{op.title}</h3>
-                    <p className="text-gray-400 font-medium">{op.company}</p>
+                    <p className="text-gray-400 font-medium">{op.company} <span className="text-xs text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded ml-2">Verified</span></p>
                   </div>
                 </div>
                 <button 
-                  onClick={() => toggleSave(op.id)}
+                  onClick={() => toggleSave(op.id || op._id)}
                   className="text-gray-500 hover:text-blue-400 transition-colors"
                 >
-                  {savedJobs.includes(op.id) ? <BookmarkCheck className="w-6 h-6 text-blue-500" /> : <Bookmark className="w-6 h-6" />}
+                  {savedJobs.includes(op.id || op._id) ? <BookmarkCheck className="w-6 h-6 text-blue-500" /> : <Bookmark className="w-6 h-6" />}
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Briefcase className="w-4 h-4 text-purple-400" /> {op.type}
+                  <Briefcase className="w-4 h-4 text-purple-400" /> {op.category || 'Job'}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <DollarSign className="w-4 h-4 text-green-400" /> {op.stipend}
+                  <DollarSign className="w-4 h-4 text-green-400" /> {op.stipend || 'Not disclosed'}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <MapPin className="w-4 h-4 text-red-400" /> <span className="truncate">{op.location}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-300">
-                  <Clock className="w-4 h-4 text-blue-400" /> {op.duration}
+                  <MapPin className="w-4 h-4 text-red-400" /> <span className="truncate">{op.location || 'Remote'}</span>
                 </div>
               </div>
 
               <div className="mb-6">
                 <div className="flex flex-wrap gap-2">
-                  {op.skills.map(skill => (
+                  {op.skills && op.skills.map(skill => (
                     <span key={skill} className="px-3 py-1 bg-slate-800 rounded-lg text-xs font-medium text-gray-300 flex items-center gap-1 border border-white/5">
                       <Code className="w-3 h-3" /> {skill}
                     </span>
@@ -220,19 +217,16 @@ export default function OpportunityHub() {
 
               <div className="flex flex-col sm:flex-row justify-between items-center pt-4 border-t border-white/10 gap-4">
                 <div className="text-xs text-gray-500">
-                  Posted: {op.posted} • Apply by: <span className="text-gray-300">{op.deadline}</span>
+                  Posted: {op.createdAt ? new Date(op.createdAt).toLocaleDateString() : 'Today'} • Expires: <span className="text-red-400">{op.expirationDate ? new Date(op.expirationDate).toLocaleDateString() : 'Rolling'}</span>
                 </div>
                 <div className="flex w-full sm:w-auto gap-3">
-                  <button className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors">
-                    Details
-                  </button>
                   <a 
-                    href={op.url} 
+                    href={op.applyLink || op.link} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-[0_0_15px_rgba(59,130,246,0.3)]"
                   >
-                    Apply Now <ExternalLink className="w-4 h-4" />
+                    Apply on {op.source || 'Official Portal'} <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
               </div>

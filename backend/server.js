@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const admin = require('./config/firebase');
+const { syncLiveJobs, cleanupExpiredJobs } = require('./services/jobAggregator');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -64,6 +65,17 @@ const seedAdmin = async () => {
     console.error('Error seeding admin user via Firebase:', error);
   }
 };
+
+// Automated Daily Jobs Sync & Cleanup (Runs every 24 hours)
+setInterval(async () => {
+  console.log('Running scheduled daily job aggregation and cleanup...');
+  await cleanupExpiredJobs();
+  await syncLiveJobs();
+}, 24 * 60 * 60 * 1000);
+
+// Run a cleanup on boot
+cleanupExpiredJobs();
+// We won't run syncLiveJobs() immediately on boot to avoid spamming the public API on every reload during dev.
 
 // Start Server & Seed
 app.listen(PORT, () => {
